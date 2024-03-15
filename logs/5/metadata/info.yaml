@@ -1,0 +1,18 @@
+current_file_path: /Users/vballoli/Coding/DT4SG/train.py
+end_date: 15/03/2024
+end_time: '13:40:07'
+executable: /Users/vballoli/anaconda3/envs/rl/bin/python
+hostname: 0587460772.wireless.umich.net
+logger:
+  artifacts_dir: /Users/vballoli/Coding/DT4SG/logs/5/artifacts
+  log_dir: /Users/vballoli/Coding/DT4SG/logs/5
+  log_id: 5
+  metadata_dir: /Users/vballoli/Coding/DT4SG/logs/5/metadata
+  metrics_dir: /Users/vballoli/Coding/DT4SG/logs/5/metrics
+process_id: 47184
+scheduler: null
+start_date: 15/03/2024
+start_time: '13:40:06'
+status: FAILED
+version_manager: null
+work_dir: /Users/vballoli/Coding/DT4SG
