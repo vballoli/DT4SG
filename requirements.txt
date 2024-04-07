@@ -3,3 +3,4 @@ d3rlpy
 git+https://github.com/jxx123/simglucose
 MLXP
 gym==0.26.2
+tensorboardX

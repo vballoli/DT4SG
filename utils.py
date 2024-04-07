@@ -2,6 +2,7 @@ import gym
 from gym import error
 import numpy as np
 import torch
+import d3rlpy
 
 import hashlib
 import os
@@ -78,6 +79,7 @@ def get_env(setting: str, number: int):
     return T1DSimEnv(patient_name=f"{setting}#{number}")
 
 def seeding_function(seed):
+    print(f"Seed: {seed}")
     np.random.seed(seed)
     torch.manual_seed(seed)
 
@@ -85,7 +87,18 @@ def get_device() -> torch.device:
     """
     Return the device to be used
     """
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = torch.device('mps') if torch.backends.mps.is_available() else device
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'mps' if torch.backends.mps.is_available() else device
     return device
 
+def get_algo(algo_name: str):
+    if algo_name == 'cql':
+        return d3rlpy.algos.CQLConfig
+    elif algo_name == 'sac':
+        return d3rlpy.algos.SACConfig
+    elif algo_name == 'td3':
+        return d3rlpy.algos.TD3Config
+    elif algo_name == 'dt':
+        return d3rlpy.algos.DecisionTransformerConfig
+    else:
+        raise ValueError(f"Unknown algorithm: {algo_name}")

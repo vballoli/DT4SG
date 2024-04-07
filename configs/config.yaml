@@ -2,5 +2,8 @@ seed: 42
 setting: 'adolescent'
 number: 1
 
+patient_type: 'adolescent'
+patient_number: 1
+
 defaults:
-  - algo_config: 'cql'
+  - algo_config: 'sac'
