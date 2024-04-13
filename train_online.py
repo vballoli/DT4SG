@@ -94,7 +94,7 @@ def train(ctx: mlxp.Context)->None:
     ])
 
     buffer = d3rlpy.dataset.ReplayBuffer(
-        d3rlpy.dataset.FIFOBuffer(1000000),
+        d3rlpy.dataset.FIFOBuffer(cfg.buffer_limit),
         cache_size=1000000,
         env=env
     )
@@ -104,6 +104,14 @@ def train(ctx: mlxp.Context)->None:
 
     # save the model
     algo.save_model(os.path.join(logger.artifacts_dir, "model.pt"))
+    
+    # save ReplayBuffer
+    if cfg.save_replay_buffer:
+        if not os.path.exists(cfg.replay_path):
+            os.makedirs(cfg.replay_path)
+        save_path =  os.path.join(cfg.replay_path, f'{algo_name}_{cfg.patient_type}#00{cfg.patient_number}_dataset.h5')
+        with open(save_path, "w+b") as f:
+            buffer.dump(f)
 
     
 
