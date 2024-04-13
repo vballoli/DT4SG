@@ -95,7 +95,7 @@ def get_device() -> torch.device:
 
 
 # Modifying random policies for our purposes 
-class OurRandomPolicy(d3rlpy.models.torch.policies.RandomPolicy):
+class OurRandomPolicy(d3rlpy.algos.qlearning.random_policy.RandomPolicy):
     # Modifying the sample_action method to return actions in the range [0, 4]
     # since insulin doses are in the range [0, 4] mg and can't be negative
     def sample_action(self, x):
@@ -120,7 +120,7 @@ class OurRandomPolicy(d3rlpy.models.torch.policies.RandomPolicy):
 
         return action
 @dataclasses.dataclass()
-class OurRandomPolicyConfig(d3rlpy.models.torch.policies.RandomPolicyConfig):
+class OurRandomPolicyConfig(d3rlpy.algos.qlearning.random_policy.RandomPolicyConfig):
     r"""Random Policy for continuous control algorithm.
 
     This is designed for data collection and lightweight interaction tests.
@@ -136,7 +136,7 @@ class OurRandomPolicyConfig(d3rlpy.models.torch.policies.RandomPolicyConfig):
     distribution: str = "uniform"
     normal_std: float = 1.0
     
-    def create(self, device: DeviceArg = False) -> "RandomPolicy":  # type: ignore
+    def create(self, device) -> "RandomPolicy":  # type: ignore
         return OurRandomPolicy(self)
 
 
