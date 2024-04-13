@@ -8,7 +8,7 @@
 # bash run_gl.sh run_td3.sh td3_1 1
 # bash run_gl.sh run_td3.sh td3_2 2
 
-bash run_gl.sh run_discrete_random.sh discrete_random_0 0
+# bash run_gl.sh run_discrete_random.sh discrete_random_0 0
 # bash run_gl.sh run_discrete_random.sh discrete_random_1 1
 # bash run_gl.sh run_discrete_random.sh discrete_random_2 2
 

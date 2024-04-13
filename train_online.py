@@ -98,8 +98,10 @@ def train(ctx: mlxp.Context)->None:
         cache_size=1000000,
         env=env
     )
-
-    algo.fit_online(env, logger_adapter=logger_adapter, n_steps=num_steps, buffer=buffer)
+    if "random" in algo_name:
+        algo.collect(env, buffer, n_steps=num_steps)
+    else:
+     algo.fit_online(env, logger_adapter=logger_adapter, n_steps=num_steps, buffer=buffer)
 
 
     # save the model
