@@ -157,7 +157,7 @@ def get_algo(algo_name: str):
     elif algo_name == 'dt':
         return d3rlpy.algos.DecisionTransformerConfig
     elif algo_name == 'random':
-        return d3rlpy.algos.OurRandomPolicyConfig
+        return OurRandomPolicyConfig
     elif algo_name == 'discrete_random':
         return d3rlpy.algos.DiscreteRandomPolicyConfig
     else:
