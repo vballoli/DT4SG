@@ -1,3 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
-python train_online.py algo_config='discrete_random' ++seed=$1
+source /home/${USER}/.bashrc
+
+source activate dt4sg
+
+python collect_data.py algo_config='discrete_random' ++seed=$1
