@@ -2,7 +2,7 @@ from utils import seeding_function, get_device, get_algo
 
 import os
 import numpy as np
-import d3rlpy
+from d3rlpy.dataset import MDPDataset
 import mlxp
 import torch
 
@@ -85,13 +85,70 @@ def collect(ctx: mlxp.Context)->None:
     # pop the num_steps from the config
     algo_config.pop('num_steps')
     
+    # Define Random policies
     if algo_name == 'random':
         def policy():
-            return np.clip(np.abs(0, np.random.randn(0, 1)*2), 4)
+            return np.clip(0, np.abs(np.random.randn()*.75), 1.5)
     elif algo_name == "discrete_random":
         def policy():
-            return np.random.randint(0, 4)
+            grid = np.arange(0.01, 1.5, step = 0.01)
+            return np.random.choice(grid)
         
+        
+    
+    # Initialize lists 
+    observations = []
+    actions = []
+    rewards = []
+    terminals = []
+    
+    
+    bg_val =  env.reset()
+    done = False
+
+    counter = 0
+    print("Starting simulation\n")
+    while not done:
+        
+        if counter % 10000:
+            print(f"Iteration {counter}\n")
+        
+        insulin = policy()
+        
+        bg_val, reward, done, _ , info =  env.step(insulin)
+        
+        insulin  = policy()
+        
+        observations.append(bg_val[0])
+        actions.append(insulin)
+        rewards.append(reward)
+        terminals.append(done)
+        
+        counter +=1 
+        
+        if counter > num_steps:
+            break
+        
+        
+        
+    dataset = MDPDataset(
+        observations = np.array(observations),
+        actions = np.array(actions),
+        rewards = np.array(rewards),
+        terminals = np.array(terminals)
+    )
+    
+    if not os.path.exists(cfg.replay_path):
+        os.makedirs(cfg.replay_path)
+    save_path =  os.path.join(cfg.replay_path, f'{algo_name}_{cfg.patient_type}#00{cfg.patient_number}_{cfg.seed}.h5')
+    print(f"Saving dataset to: {save_path}")
+    with open(save_path, "w+b") as f:
+        dataset.dump(f)   
+        
+        
+    
+if __name__ == "__main__":
+    collect()
         
     
         
