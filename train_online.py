@@ -1,3 +1,4 @@
+from __future__ import annotations
 from utils import seeding_function, get_device, get_algo
 
 import os
@@ -16,6 +17,9 @@ from simglucose.actuator.pump import InsulinPump
 from simglucose.simulation.scenario_gen import RandomScenario
 from gym.utils import seeding
 from datetime import datetime
+
+from d3rlpy.constants import ActionSpace
+from d3rlpy.preprocessing import MinMaxActionScaler
 
 
 class T1DSimEnvOurs(T1DSimEnv):
@@ -85,7 +89,7 @@ def train(ctx: mlxp.Context)->None:
 
     print(f"Config: {algo_config}")
 
-    algo = get_algo(algo_name)(**algo_config).create(device)
+    algo = get_algo(algo_name)(**algo_config, action_scaler=MinMaxActionScaler(minimum=-1000000, maximum=1000)).create(device)
 
     # train the online algorithm
     logger_adapter = d3rlpy.logging.CombineAdapterFactory([
@@ -96,7 +100,8 @@ def train(ctx: mlxp.Context)->None:
     buffer = d3rlpy.dataset.ReplayBuffer(
         d3rlpy.dataset.FIFOBuffer(cfg.buffer_limit),
         cache_size=1000000,
-        env=env
+        env=env,
+        action_space=ActionSpace.CONTINUOUS
     )
     if "random" in algo_name:
         algo.collect(env, buffer, n_steps=num_steps)
@@ -114,9 +119,6 @@ def train(ctx: mlxp.Context)->None:
         save_path =  os.path.join(cfg.replay_path, f'{algo_name}_{cfg.patient_type}#00{cfg.patient_number}_{cfg.seed}.h5')
         with open(save_path, "w+b") as f:
             buffer.dump(f)
-
-    
-
 
     
 
