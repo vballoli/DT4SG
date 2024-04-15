@@ -5,5 +5,9 @@ number: 1
 patient_type: 'adolescent'
 patient_number: 1
 
+save_replay_buffer: True
+replay_path: 'replays'
+buffer_limit: 1000000
+
 defaults:
   - algo_config: 'sac'

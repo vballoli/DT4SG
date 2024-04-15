@@ -1,4 +1,6 @@
 import gym
+import dataclasses
+
 from gym import error
 import numpy as np
 import torch
@@ -91,6 +93,60 @@ def get_device() -> torch.device:
     device = 'mps' if torch.backends.mps.is_available() else device
     return device
 
+
+# Modifying random policies for our purposes 
+class OurRandomPolicy(d3rlpy.algos.qlearning.random_policy.RandomPolicy):
+    # Modifying the sample_action method to return actions in the range [0, 4]
+    # since insulin doses are in the range [0, 4] mg and can't be negative
+    def sample_action(self, x):
+        x = np.asarray(x)
+        action_shape = (x.shape[0], self._action_size)
+
+        if self._config.distribution == "uniform":
+            action = np.random.uniform(0, 4, size=action_shape)
+        elif self._config.distribution == "normal":
+            action = np.random.normal(
+                0.0, self._config.normal_std, size=action_shape
+            )
+        else:
+            raise ValueError(
+                f"invalid distribution type: {self._config.distribution}"
+            )
+
+        action = np.clip(action, 0, 4.0)
+
+        if self._config.action_scaler:
+            action = self._config.action_scaler.reverse_transform_numpy(action)
+
+        return action
+@dataclasses.dataclass()
+class OurRandomPolicyConfig(d3rlpy.algos.qlearning.random_policy.RandomPolicyConfig):
+    r"""Random Policy for continuous control algorithm.
+
+    This is designed for data collection and lightweight interaction tests.
+    ``fit`` and ``fit_online`` methods will raise exceptions.
+
+    Args:
+        action_scaler (d3rlpy.preprocessing.ActionScaler): Action preprocessor.
+        distribution (str): Random distribution. Available options are
+            ``['uniform', 'normal']``.
+        normal_std (float): Standard deviation of the normal distribution. This
+            is only used when ``distribution='normal'``.
+    """
+    distribution: str = "uniform"
+    normal_std: float = 1.0
+    
+    def create(self, device) -> "RandomPolicy":  # type: ignore
+        return OurRandomPolicy(self)
+
+
+    @staticmethod
+    def get_type() -> str:
+        return "random_policy"
+
+
+
+
 def get_algo(algo_name: str):
     if algo_name == 'cql':
         return d3rlpy.algos.CQLConfig
@@ -100,5 +156,9 @@ def get_algo(algo_name: str):
         return d3rlpy.algos.TD3Config
     elif algo_name == 'dt':
         return d3rlpy.algos.DecisionTransformerConfig
+    elif algo_name == 'random':
+        return OurRandomPolicyConfig
+    elif algo_name == 'discrete_random':
+        return d3rlpy.algos.DiscreteRandomPolicyConfig
     else:
         raise ValueError(f"Unknown algorithm: {algo_name}")
