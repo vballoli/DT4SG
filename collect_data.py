@@ -3,6 +3,7 @@ from utils import seeding_function, get_device, get_algo
 import os
 import numpy as np
 from d3rlpy.dataset import MDPDataset
+from d3rlpy.constants import ActionSpace
 import mlxp
 import torch
 
@@ -15,6 +16,7 @@ from simglucose.patient.t1dpatient import T1DPatient
 from simglucose.sensor.cgm import CGMSensor
 from simglucose.actuator.pump import InsulinPump
 from simglucose.simulation.scenario_gen import RandomScenario
+from simglucose.analysis.risk import risk_index
 from gym.utils import seeding
 from datetime import datetime
 
@@ -87,11 +89,15 @@ def collect(ctx: mlxp.Context)->None:
     
     # Define Random policies
     if algo_name == 'random':
+        action_size = 1
+        action_space = ActionSpace.CONTINUOUS
         def policy():
-            return np.clip(0, np.abs(np.random.randn()*.75), 1.5)
+            return np.clip(0, np.abs(np.random.randn()*.5), 1.)
     elif algo_name == "discrete_random":
+        action_size = len(np.arange(0.01, 1, step = 0.01))
+        action_space = ActionSpace.DISCRETE
         def policy():
-            grid = np.arange(0.01, 1.5, step = 0.01)
+            grid = np.arange(0.01, 1, step = 0.01)
             return np.random.choice(grid)
         
         
@@ -103,39 +109,43 @@ def collect(ctx: mlxp.Context)->None:
     terminals = []
     
     
-    bg_val =  env.reset()
-    done = False
-
+    bg_val =  env.reset()[0]
+    
     counter = 0
     print("Starting simulation\n")
-    while not done:
+    while counter <= num_steps:
         
-        if counter % 10000:
+        if counter % 10000 ==0:
             print(f"Iteration {counter}\n")
         
         insulin = policy()
         
-        bg_val, reward, done, _ , info =  env.step(insulin)
-        
-        insulin  = policy()
-        
+        # Update current state and action (s_t, a_t)
         observations.append(bg_val[0])
         actions.append(insulin)
+        
+        bg_val, reward, done, _ , info =  env.step(insulin)
+        
+        # reward_t = r(s_t, a_t), terminal_t = terminal(s_t,a_t)
+        
         rewards.append(reward)
         terminals.append(done)
         
+        if done:
+            bg_val =  env.reset()[0]
+        
         counter +=1 
         
-        if counter > num_steps:
-            break
         
         
         
     dataset = MDPDataset(
-        observations = np.array(observations),
-        actions = np.array(actions),
-        rewards = np.array(rewards),
-        terminals = np.array(terminals)
+        observations = np.array(observations, dtype = np.float32).reshape(-1,1),
+        actions = np.array(actions, dtype = np.float32).reshape(-1,1),
+        rewards = np.array(rewards, dtype = np.float32).reshape(-1,1),
+        terminals = np.array(terminals).reshape(-1,1),
+        action_space = action_space,
+        action_size = action_size
     )
     
     if not os.path.exists(cfg.replay_path):

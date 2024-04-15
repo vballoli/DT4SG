@@ -89,7 +89,7 @@ def train(ctx: mlxp.Context)->None:
 
     print(f"Config: {algo_config}")
 
-    algo = get_algo(algo_name)(**algo_config, action_scaler=MinMaxActionScaler(minimum=-1000000, maximum=1000)).create(device)
+    algo = get_algo(algo_name)(**algo_config, action_scaler=MinMaxActionScaler(minimum=0.0001, maximum=1000)).create(device)
 
     # train the online algorithm
     logger_adapter = d3rlpy.logging.CombineAdapterFactory([
