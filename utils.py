@@ -156,6 +156,8 @@ def get_algo(algo_name: str):
         return d3rlpy.algos.TD3Config
     elif algo_name == 'dt':
         return d3rlpy.algos.DecisionTransformerConfig
+    elif algo_name == 'td3+bc':
+        return d3rlpy.algos.TD3PlusBCConfig
     elif algo_name == 'random':
         return OurRandomPolicyConfig
     elif algo_name == 'discrete_random':
