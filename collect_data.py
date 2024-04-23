@@ -105,10 +105,9 @@ def collect(ctx: mlxp.Context)->None:
     algo_config.pop('num_steps')
     
     
-    
+    action_size = 1
     # Define Random policies
     if algo_name == 'random':
-        action_size = 1
         action_space = ActionSpace.CONTINUOUS
         policy = RandomPolicy()
     elif algo_name == "discrete_random":
@@ -116,20 +115,23 @@ def collect(ctx: mlxp.Context)->None:
         action_space = ActionSpace.DISCRETE
         policy = RandomPolicy(discrete=True)
     elif algo_name == "pid_expert":
+        action_space = ActionSpace.CONTINUOUS
         params = pid_params.get_params()
-        patient_name = f"{cfg.patient_type}#{cfg.patient_number}-10"
+        patient_name = f"{cfg.patient_type}#{cfg.patient_number}"
         p_params = params[patient_name]
-        print(p_params)
+        
         policy = PIDController(
             P = p_params["kp"],
             I = p_params["ki"],
             D = p_params["kd"]
         )
     elif algo_name == "pid_base":
-        policy = PIDController()
+        action_space = ActionSpace.CONTINUOUS
+        # Initialize PID controller accoridng to example in simglucose
+        policy = PIDController(P=0.001, I=0.00001, D=0.001)
         
     elif algo_name == "bb":
-        
+        action_space = ActionSpace.CONTINUOUS
         policy = BBController()
         
     
