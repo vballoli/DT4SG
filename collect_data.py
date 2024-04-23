@@ -16,10 +16,14 @@ from simglucose.patient.t1dpatient import T1DPatient
 from simglucose.sensor.cgm import CGMSensor
 from simglucose.actuator.pump import InsulinPump
 from simglucose.simulation.scenario_gen import RandomScenario
-from simglucose.analysis.risk import risk_index
+from simglucose.controller.pid_ctrller import PIDController
+from simglucose.controller.basal_bolus_ctrller import BBController
+
 from gym.utils import seeding
 from datetime import datetime
 
+
+from pid_params  import pid_params
 
 
 class T1DSimEnvOurs(T1DSimEnv):
@@ -66,6 +70,19 @@ class T1DSimEnvOurs(T1DSimEnv):
         return env, seed2, seed3, seed4
 
 
+class RandomPolicy:
+    
+    def __init__(self, discrete=False) -> None:
+        self.discrete = discrete
+    
+    def policy(self, **kwargs):
+        
+        if self.discrete:
+            grid = np.arange(0.01, 1, step = 0.01)
+            return np.random.choice(grid)
+        else:
+            return np.clip(0, np.abs(np.random.randn()*.5), 1.)
+
 
 @mlxp.launch(config_path='./configs',
             seeding_function=seeding_function)
@@ -87,19 +104,33 @@ def collect(ctx: mlxp.Context)->None:
     # pop the num_steps from the config
     algo_config.pop('num_steps')
     
+    
+    
     # Define Random policies
     if algo_name == 'random':
         action_size = 1
         action_space = ActionSpace.CONTINUOUS
-        def policy():
-            return np.clip(0, np.abs(np.random.randn()*.5), 1.)
+        policy = RandomPolicy()
     elif algo_name == "discrete_random":
         action_size = len(np.arange(0.01, 1, step = 0.01))
         action_space = ActionSpace.DISCRETE
-        def policy():
-            grid = np.arange(0.01, 1, step = 0.01)
-            return np.random.choice(grid)
+        policy = RandomPolicy(discrete=True)
+    elif algo_name == "pid_expert":
+        params = pid_params.get_params()
+        patient_name = f"{cfg.patient_type}#{cfg.patient_number}-10"
+        p_params = params[patient_name]
+        print(p_params)
+        policy = PIDController(
+            P = p_params["kp"],
+            I = p_params["ki"],
+            D = p_params["kd"]
+        )
+    elif algo_name == "pid_base":
+        policy = PIDController()
         
+    elif algo_name == "bb":
+        
+        policy = BBController()
         
     
     # Initialize lists 
@@ -108,9 +139,12 @@ def collect(ctx: mlxp.Context)->None:
     rewards = []
     terminals = []
     
-    
-    bg_val =  env.reset()[0]
-    
+    bg_val =  env.reset()
+    insulin = env.action_space.sample()
+    bg_val, reward, done, _, info = env.step(insulin)
+    observations.append(bg_val[0])
+    actions.append(float(insulin))
+
     counter = 0
     print("Starting simulation\n")
     while counter <= num_steps:
@@ -118,11 +152,14 @@ def collect(ctx: mlxp.Context)->None:
         if counter % 10000 ==0:
             print(f"Iteration {counter}\n")
         
-        insulin = policy()
+        insulin = policy.policy(observation = bg_val,  reward=reward, done=done, **info)
+        
+        if "pid" in algo_name or "bb" in algo_name:
+            insulin = insulin.basal
         
         # Update current state and action (s_t, a_t)
         observations.append(bg_val[0])
-        actions.append(insulin)
+        actions.append(float(insulin))
         
         bg_val, reward, done, _ , info =  env.step(insulin)
         
@@ -130,9 +167,11 @@ def collect(ctx: mlxp.Context)->None:
         
         rewards.append(reward)
         terminals.append(done)
-        
+
         if done:
-            bg_val =  env.reset()[0]
+            env.reset()
+            insulin = env.action_space.sample()
+            bg_val, reward, done, _, info = env.step(insulin)
         
         counter +=1 
         
@@ -160,8 +199,4 @@ def collect(ctx: mlxp.Context)->None:
 if __name__ == "__main__":
     collect()
         
-    
-        
-    
-    
     
